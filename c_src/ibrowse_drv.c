@@ -11,10 +11,11 @@
 
 static ErlDrvData ibrowse_drv_start(ErlDrvPort port, char* buff);
 static void ibrowse_drv_stop(ErlDrvData handle);
-static void ibrowse_drv_command(ErlDrvData handle, char *buff, int bufflen);
-static void ibrowse_drv_finish(void);
 static int ibrowse_drv_control(ErlDrvData handle, unsigned int command, 
                        char* buf, int count, char** res, int res_size);
+
+int calc_encoded_length(char* buf, int bufflen);
+int d2h(unsigned int i);
 
 /* The driver entry */
 static ErlDrvEntry ibrowse_driver_entry = {
@@ -77,7 +78,7 @@ static int ibrowse_drv_control(ErlDrvData handle, unsigned int command,
   unsigned int temp = 0, rlen_1 = 0;
   char* replybuf;
 
-  fprintf(stderr, "alloc_ptr -> %d\n", state->alloc_ptr);
+  fprintf(stderr, "alloc_ptr -> %p\n", state->alloc_ptr);
 /*   if(state->alloc_ptr != NULL) */
 /*     { */
 /*       driver_free(state->alloc_ptr); */
@@ -94,15 +95,15 @@ static int ibrowse_drv_control(ErlDrvData handle, unsigned int command,
     }
   *rbuf = driver_alloc(rlen_1);
   state->alloc_ptr = *rbuf;
-  fprintf(stderr, "*rbuf -> %d\n", *rbuf);
+  fprintf(stderr, "*rbuf -> %p\n", *rbuf);
   replybuf = *rbuf;
 
   for(i=0;i<bufflen;i++)
     {
       temp = buf[i];
-      if( 'a' <= temp && temp <= 'z'
-	  || 'A' <= temp && temp <= 'Z'
-	  || '0' <= temp && temp <= '9'
+      if( ('a' <= temp && temp <= 'z')
+	  || ('A' <= temp && temp <= 'Z')
+	  || ('0' <= temp && temp <= '9')
 	  || temp == '-' || temp == '_' || temp == '.' )
 	{
 	  replybuf[j++] = temp;
@@ -130,9 +131,9 @@ int calc_encoded_length(char* buf, int bufflen)
   for(i=0;i<bufflen;i++)
     {
       temp = buf[i];
-      if( 'a' <= temp && temp <= 'z'
-	  || 'A' <= temp && temp <= 'Z'
-	  || '0' <= temp && temp <= '9'
+      if( ('a' <= temp && temp <= 'z')
+	  || ('A' <= temp && temp <= 'Z')
+	  || ('0' <= temp && temp <= '9')
 	  || temp == '-' || temp == '_' || temp == '.' )
 	{
 	  count++;
