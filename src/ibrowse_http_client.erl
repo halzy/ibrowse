@@ -502,7 +502,7 @@ do_send(Req, #state{socket = Sock,
 do_send(Req, #state{socket = Sock, is_ssl = true})  ->  ssl:send(Sock, Req);
 do_send(Req, #state{socket = Sock, is_ssl = false}) ->  gen_tcp:send(Sock, Req).
 
-%% @spec do_send_body(Sock::socket_descriptor(), Source::source_descriptor(), IsSSL::boolean()) -> ok | error()
+%% @spec do_send_body(Sock::socket_descriptor(), Source::source_descriptor()) -> ok | error()
 %% source_descriptor() = fun_arity_0           |
 %%                       {fun_arity_0}         |
 %%                       {fun_arity_1, term()}
