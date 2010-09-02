@@ -82,6 +82,7 @@
          send_req/4,
          send_req/5,
          send_req/6,
+	 send_req_httpc/6,
          send_req_direct/4,
          send_req_direct/5,
          send_req_direct/6,
@@ -347,6 +348,30 @@ try_routing_request(Lb_pid, Parsed_url,
     end;
 try_routing_request(_, _, _, _, _, _, _, _, _, _, _) ->
     {error, retry_later}.
+
+%% @doc Similar to send_req/6
+%% This function is to help migration from the erlang httpc module. It takes 
+%% normal ibrowse inputs and returns an httpc style return.
+%% @spec send_req_httpc(Url, Headers::headerList(), Method::method(), Body::body(), Options::optionList(), Timeout) -> response_httpc()
+%% response_httpc() = {status_line(), Headers::headerList(), body()} | {status_code(), body()} | req_id()
+%% status_line()    = {http_version(), status_code(), reason_phrase()}
+%% http_version()   = string()
+%% status_code()    = integer()
+%% reason_phrase()  = string()
+%% body()           = string() | binary() 
+send_req_httpc(Url, Headers, Method, Body, Options, Timeout) ->
+    Response = ibrowse:send_req(Url, Headers, Method, Body, Options, Timeout),
+    case Response of
+	{ok, Status, ResponseHeaders, ResponseBody} ->
+	    HttpVersion = ibrowse_lib:get_http_vsn_string(Options),
+	    {StatusCode, _} = string:to_integer(Status),
+	    Reason = atom_to_list(ibrowse_lib:status_code(StatusCode)),
+	    {{HttpVersion, StatusCode, Reason}, ResponseHeaders, ResponseBody};
+	{ibrowse_req_id, RequestId} ->
+	    RequestId;
+	{error, Reason} ->
+	    {500, atom_to_list(Reason)}
+    end.
 
 merge_options(Host, Port, Options) ->
     Config_options = get_config_value({options, Host, Port}, []),

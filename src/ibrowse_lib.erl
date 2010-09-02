@@ -14,6 +14,7 @@
 
 -export([
          get_trace_status/2,
+	 get_http_vsn_string/1,
          do_trace/2,
          do_trace/3,
          url_encode/1,
@@ -108,6 +109,17 @@ month_int("Sep") -> 9;
 month_int("Oct") -> 10;
 month_int("Nov") -> 11;
 month_int("Dec") -> 12.
+
+
+%% @doc Given a set of http options, returns the HTTP version to be used
+%% @spec get_http_vsn_string(Options) -> HttpVersion
+%% HttpVersion = string()
+get_http_vsn_string(Options) ->
+    http_vsn_string(get_value(http_vsn, Options, {1,1})).
+
+http_vsn_string({0,9}) -> "HTTP/0.9";
+http_vsn_string({1,0}) -> "HTTP/1.0";
+http_vsn_string({1,1}) -> "HTTP/1.1".
 
 %% @doc Given a status code, returns an atom describing the status code. 
 %% @spec status_code(StatusCode::status_code()) -> StatusDescription

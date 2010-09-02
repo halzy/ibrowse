@@ -62,6 +62,7 @@
                   response_format}).
 
 -import(ibrowse_lib, [
+		      get_http_vsn_string/1,
                       get_value/2,
                       get_value/3,
                       do_trace/2
@@ -799,9 +800,29 @@ http_auth_digest([], []) ->
 http_auth_digest(Username, Password) ->
     ibrowse_lib:encode_base64(Username ++ [$: | Password]).
 
+encode_base64([]) ->
+    [];
+encode_base64([A]) ->
+    [e(A bsr 2), e((A band 3) bsl 4), $=, $=];
+encode_base64([A,B]) ->
+    [e(A bsr 2), e(((A band 3) bsl 4) bor (B bsr 4)), e((B band 15) bsl 2), $=];
+encode_base64([A,B,C|Ls]) ->
+    encode_base64_do(A,B,C, Ls).
+encode_base64_do(A,B,C, Rest) ->
+    BB = (A bsl 16) bor (B bsl 8) bor C,
+    [e(BB bsr 18), e((BB bsr 12) band 63),
+     e((BB bsr 6) band 63), e(BB band 63)|encode_base64(Rest)].
+
+e(X) when X >= 0, X < 26 -> X+65;
+e(X) when X>25, X<52     -> X+71;
+e(X) when X>51, X<62     -> X-4;
+e(62)                    -> $+;
+e(63)                    -> $/;
+e(X)                     -> exit({bad_encode_base64_token, X}).
+
 make_request(Method, Headers, AbsPath, RelPath, Body, Options,
              #state{use_proxy = UseProxy, is_ssl = Is_ssl}) ->
-    HttpVsn = http_vsn_string(get_value(http_vsn, Options, {1,1})),
+    HttpVsn = get_http_vsn_string(Options),
     Headers_1 =
         case get_value(content_length, Headers, false) of
             false when (Body == []) or
@@ -842,9 +863,7 @@ make_request(Method, Headers, AbsPath, RelPath, Body, Options,
           end,
     {[method(Method), " ", Uri, " ", HttpVsn, crnl(), Headers_3, crnl()], Body_1}.
 
-http_vsn_string({0,9}) -> "HTTP/0.9";
-http_vsn_string({1,0}) -> "HTTP/1.0";
-http_vsn_string({1,1}) -> "HTTP/1.1".
+
 
 cons_headers(Headers) ->
     cons_headers(Headers, []).
