@@ -360,17 +360,19 @@ try_routing_request(_, _, _, _, _, _, _, _, _, _, _) ->
 %% reason_phrase()  = string()
 %% body()           = string() | binary() 
 send_req_httpc(Url, Headers, Method, Body, Options, Timeout) ->
-    Response = ibrowse:send_req(Url, Headers, Method, Body, Options, Timeout),
-    case Response of
+    try ibrowse:send_req(Url, Headers, Method, Body, Options, Timeout) of
 	{ok, Status, ResponseHeaders, ResponseBody} ->
 	    HttpVersion = ibrowse_lib:get_http_vsn_string(Options),
 	    {StatusCode, _} = string:to_integer(Status),
 	    Reason = atom_to_list(ibrowse_lib:status_code(StatusCode)),
-	    {{HttpVersion, StatusCode, Reason}, ResponseHeaders, ResponseBody};
+	    {ok, {{HttpVersion, StatusCode, Reason}, ResponseHeaders, ResponseBody}};
 	{ibrowse_req_id, RequestId} ->
 	    RequestId;
 	{error, Reason} ->
-	    {500, atom_to_list(Reason)}
+	    {error, {failure, Reason}}
+    catch
+	Type:Error ->
+	    {error, {Type, Error}}
     end.
 
 merge_options(Host, Port, Options) ->
